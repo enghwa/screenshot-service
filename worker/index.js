@@ -1,5 +1,11 @@
 const Squiss = require('squiss');
-const AWS = require('aws-sdk');
+
+const AWSXRay = require('aws-xray-sdk');
+// const AWS = require('aws-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+// AWSXRay.enableManualMode();
+
+
 const puppeteer = require('puppeteer');
 const DocumentClient = new AWS.DynamoDB.DocumentClient();
 const S3 = new AWS.S3();
@@ -14,6 +20,8 @@ var workQueue = new Squiss({
 // What to do when a job pops up on the queue.
 workQueue.on('message', async function(msg) {
   console.log(`Job ${msg.body.id}, rendering ${msg.body.uri}`);
+
+  // var segment = new AWSXRay.Segment('workerSegment');
 
   // Update the status to started
   await DocumentClient.update({
@@ -67,7 +75,7 @@ workQueue.on('message', async function(msg) {
       ContentType: 'image/png'
     }).promise();
 
-    uri = `https://s3.amazonaws.com/${process.env.BUCKET}/${key}`;
+    uri = `https://${process.env.BUCKET}.s3.amazonaws.com/${key}`;
     console.log(`PNG saved to ${uri}`);
   } catch (e) {
     console.error(e);
@@ -104,6 +112,8 @@ workQueue.on('message', async function(msg) {
       ':u': uri
     }
   }).promise();
+
+  // segment.close();
 
   console.log(`Done with job ${msg.body.id}`);
   msg.del();

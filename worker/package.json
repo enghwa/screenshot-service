@@ -2,6 +2,7 @@
   "dependencies": {
     "aws-sdk": "^2.438.0",
     "puppeteer": "1.14.0",
-    "squiss": "^2.2.1"
+    "squiss": "^2.2.1",
+    "aws-xray-sdk": "latest"
   }
 }

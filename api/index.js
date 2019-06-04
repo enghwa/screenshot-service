@@ -1,16 +1,32 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
-const AWS = require('aws-sdk');
+
+const AWSXRay = require('aws-xray-sdk');
+// const AWS = require('aws-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+
 const morgan = require('morgan');
 const uuidv1 = require('uuid/v1');
-const SQS = new AWS.SQS();
-const DocumentClient = new AWS.DynamoDB.DocumentClient();
 
+const SQS = new AWS.SQS();
+// const SQS = AWSXRay.captureAWSClient(new AWS.SQS());
+// const SQS = AWSXRay.captureAWSClient(new AWS.SQS({apiVersion: '2012-11-05', region: 'ap-southeast-1'}));
+
+const DocumentClient = new AWS.DynamoDB.DocumentClient();
 const QUEUE_URL = process.env.QUEUE_URL;
+
+app.use(AWSXRay.express.openSegment('api')); //required at the start of your routes
 
 app.use(morgan('tiny'));
 app.use(bodyParser.json());
+
+// CORS
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
 // Simple healthcheck route so the load balancer
 // knows that the application is up and accepting requests
@@ -66,6 +82,8 @@ app.get('/job/:id', async function(req, res) {
     return res.status(200).send(status.Item);
   }
 });
+
+app.use(AWSXRay.express.closeSegment()); //required at the end of your routes / first in error handling routes
 
 app.listen(process.env.PORT || 80);
 
