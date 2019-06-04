@@ -1,4 +1,5 @@
 node_modules
 synth
 package-lock.json
+.DS_Store
 cdk.context.json
